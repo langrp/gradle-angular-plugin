@@ -36,7 +36,7 @@ class PathUtilTests extends Specification {
 	def "Normalize"() {
 
 		when:
-		def normal = PathUtil.normalize(Paths.get(".\\projects\\"))
+		def normal = PathUtil.normalize(Paths.get(".\\projects"))
 
 		then:
 		"./projects" == normal

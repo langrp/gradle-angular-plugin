@@ -30,7 +30,6 @@ import com.palawan.gradle.util.AngularJsonHelper;
 import org.gradle.api.GradleException;
 import org.gradle.api.Incubating;
 import org.gradle.api.Task;
-import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
@@ -65,7 +64,6 @@ import static com.palawan.gradle.util.PathUtil.windows;
 @SuppressWarnings("UnstableApiUsage")
 public class AngularInitTask extends NpmTask {
 
-	@Internal
 	private List<String> cliArguments;
 
 	private boolean createNewApplication = false;
