@@ -36,6 +36,7 @@ import org.gradle.api.tasks.options.Option;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -212,10 +213,10 @@ public class AngularInitTask extends NpmTask {
 			npmCmd = npmCmd.replace("<node_path>", nodeNormCmd).replace("<npm_path>", npmNormCmd);
 
 			try {
-				Files.writeString(Paths.get(projectDir, "npm"), npm);
-				Files.writeString(Paths.get(projectDir, "ng"), ng);
-				Files.writeString(Paths.get(projectDir, "npm.cmd"), npmCmd);
-				Files.writeString(Paths.get(projectDir, "ng.cmd"), ngCmd);
+				Files.write(Paths.get(projectDir, "npm"), npm.getBytes(StandardCharsets.UTF_8));
+				Files.write(Paths.get(projectDir, "ng"), ng.getBytes(StandardCharsets.UTF_8));
+				Files.write(Paths.get(projectDir, "npm.cmd"), npmCmd.getBytes(StandardCharsets.UTF_8));
+				Files.write(Paths.get(projectDir, "ng.cmd"), ngCmd.getBytes(StandardCharsets.UTF_8));
 
 			} catch (IOException e) {
 				throw new GradleException("Unable to generate npm, ng scripts.", e);

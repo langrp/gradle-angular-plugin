@@ -230,8 +230,10 @@ public class AngularJsonHelper {
             String artifactVersion = getPackageVersion(artifactPackagePath.toFile()).orElse(null);
 
             if (Objects.equals(libraryVersion, artifactVersion)) {
+                String libStamp = new String(Files.readAllBytes(libraryTimestampPath), StandardCharsets.UTF_8);
+                String artStamp = new String(Files.readAllBytes(artifactTimestampPath), StandardCharsets.UTF_8);
                 return Files.exists(libraryTimestampPath) && Files.exists(artifactTimestampPath) &&
-                        ! Objects.equals(Files.readString(libraryTimestampPath), Files.readString(artifactTimestampPath));
+                        ! Objects.equals(libStamp, artStamp);
             }
 
         } catch (IOException e) {
@@ -276,9 +278,9 @@ public class AngularJsonHelper {
      */
     public void generateTimestamp(String project, File baseDir) {
         try {
-            Files.writeString(
+            Files.write(
                     Paths.get(baseDir.toString(), TIMESTAMP_FILE),
-                    Long.toString(Instant.now().getEpochSecond()));
+                    Long.toString(Instant.now().getEpochSecond()).getBytes(StandardCharsets.UTF_8));
 
         } catch (IOException e) {
             throw new GradleException("Unable to write timestamp of '" + project + "' build.");
