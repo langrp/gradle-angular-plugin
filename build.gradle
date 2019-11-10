@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2019 Petr Langr
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+plugins {
+    id 'com.gradle.plugin-publish' version '0.10.1'
+    id 'java-gradle-plugin'
+    id 'java'
+    id 'idea'
+    id 'groovy'
+    id 'signing'
+}
+apply from: rootProject.file( 'gradle/publishing.gradle' )
+apply from: rootProject.file( 'gradle/functional-tests.gradle' )
+
+repositories {
+    mavenCentral()
+    gradlePluginPortal()
+}
+
+
+group = 'com.palawanframe.build'
+description = 'Gradle plugin enabling build of angular application/components along side with gradle backend build.'
+
+targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_1_8
+
+gradlePlugin {
+    plugins {
+        angular {
+            id = 'com.palawanframe.angular'
+            displayName = 'Angular Plugin'
+            description = """
+                Build your angular frontend application along with your gradle base backend application. Plugin manages
+                versioning, publishing and dependency management of your angular application and/or components.
+            """
+            implementationClass = 'com.palawan.gradle.AngularPlugin'
+        }
+        angularBase {
+            id = 'com.palawanframe.angular-base'
+            displayName = 'Angular Base Plugin'
+            description = """
+                Creates new angular project from only gradle initialized project. Simply apply plugin into your gradle
+                project and execute :angularInit task and new angular project will be created.
+            """
+            implementationClass = 'com.palawan.gradle.AngularBasePlugin'
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/langrp'
+    vcsUrl = "https://github.com/langrp/${rootProject.name}"
+    description project.description
+    tags = ['angular', 'node', 'nodejs']
+
+    mavenCoordinates {
+        groupId = project.group as String
+        artifactId = project.name
+        version = project.version as String
+    }
+}
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'com.moowork.gradle:gradle-node-plugin:1.3.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
+
+    testImplementation gradleTestKit()
+    testImplementation('org.spockframework:spock-core:1.3-groovy-2.5') {
+        exclude group: 'org.codehaus.groovy'
+    }
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+        }
+    }
+}
+
+signing {
+    required { gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+

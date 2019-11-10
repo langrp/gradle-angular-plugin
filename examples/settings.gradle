@@ -1,0 +1,6 @@
+
+include 'sample-app'
+includeBuild '..'
+
+rootProject.name = 'angular-examples'
+		
