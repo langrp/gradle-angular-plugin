@@ -1,0 +1,16 @@
+
+plugins {
+	id 'com.palawanframe.angular-base'
+}
+
+angular {
+	group = '@sample'
+	nodeVersion = '12.12.0'
+	npmVersion = '6.12.0'
+	download = true
+	workDir = rootProject.file( '.gradle/nodejs' )
+	npmWorkDir = rootProject.file( '.gradle/npm' )
+	nodeModulesDir = projectDir
+}
+
+

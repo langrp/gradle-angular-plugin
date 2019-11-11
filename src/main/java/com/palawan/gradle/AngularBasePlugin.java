@@ -83,7 +83,7 @@ public class AngularBasePlugin implements Plugin<Project> {
     }
 
     private void configureInitializeTask(Project project) {
-        if (ProjectUtil.isTopLevelProject(project)) {
+        if (ProjectUtil.isTopLevelAngularProject(project)) {
             project.getTasks().register(INITIALIZE_TASK, AngularInitTask.class, t -> {
                 t.setGroup("Build Setup");
                 t.setDescription("Initializes angular dependencies.");
@@ -92,7 +92,7 @@ public class AngularBasePlugin implements Plugin<Project> {
     }
 
     private void configureAngularCli(Project project) {
-        if (ProjectUtil.isTopLevelProject(project)) {
+        if (ProjectUtil.isTopLevelAngularProject(project)) {
             project.getTasks().register(CLI_COMMAND_TASK, NgCliTask.class, t -> {
                 t.setGroup("Build Setup");
                 t.setDescription("Executes angular-cli command '--cmd' with additional arguments '--args'");
@@ -104,7 +104,7 @@ public class AngularBasePlugin implements Plugin<Project> {
         project.afterEvaluate(p -> {
             AngularExtension extension = AngularExtension.get(p);
             if (extension.getAngularJson() != null) {
-                if (ProjectUtil.isTopLevelProject(p)) {
+                if (ProjectUtil.isTopLevelAngularProject(p)) {
                     extension.getAngularJson().getProjects().values().stream()
                             .filter(a -> !p.getChildProjects().containsKey(a.getName()))
                             .forEach(a -> a.setVersion(p.getVersion().toString()));
