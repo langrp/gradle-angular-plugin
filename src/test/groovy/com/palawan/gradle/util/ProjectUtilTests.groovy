@@ -22,7 +22,9 @@
 
 package com.palawan.gradle.util
 
+import com.palawan.gradle.AngularBasePlugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.PluginContainer
 import spock.lang.Specification
 /**
  *
@@ -49,10 +51,14 @@ class ProjectUtilTests extends Specification {
 	def "GetTopLevelProject2"() {
 		given:
 		Project root = Mock(Project)
+		PluginContainer plugins = Mock()
 		root.getRootProject() >> root
+		root.getPlugins() >> plugins
+		plugins.hasPlugin(AngularBasePlugin.class) >> true
 
 		and:
 		project = Mock(Project)
+		project.getParent() >> root
 		project.getRootProject() >> root
 
 		when:
@@ -60,6 +66,35 @@ class ProjectUtilTests extends Specification {
 
 		then:
 		result == root
+
+	}
+
+	def "GetTopLevelProject3"() {
+		given:
+		Project root = Mock(Project)
+		PluginContainer plugins = Mock()
+		root.getRootProject() >> root
+		root.getPlugins() >> plugins
+		plugins.hasPlugin(AngularBasePlugin.class) >> false
+
+		and:
+		Project ngRoot = Mock(Project)
+		PluginContainer ngPlugins = Mock()
+		ngRoot.getRootProject() >> root
+		ngRoot.getParent() >> root
+		ngRoot.getPlugins() >> ngPlugins
+		ngPlugins.hasPlugin(AngularBasePlugin.class) >> true
+
+		and:
+		project = Mock(Project)
+		project.getRootProject() >> root
+		project.getParent() >> ngRoot
+
+		when:
+		def result = ProjectUtil.getTopLevelProject(project)
+
+		then:
+		result == ngRoot
 
 	}
 

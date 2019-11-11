@@ -90,6 +90,7 @@ public class AngularInitTask extends NpmTask {
 	@TaskAction
 	public void exec() {
 		AngularExtension extension = AngularExtension.get(getProject());
+		setWorkingDir(getProject().getProjectDir());
 		String version = extension.getVersion() == null ? "latest" : extension.getVersion();
 		setArgs(Arrays.asList("install", "@angular/cli@" + version));
 		super.exec();

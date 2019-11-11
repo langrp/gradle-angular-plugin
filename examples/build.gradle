@@ -1,18 +1,4 @@
 
-plugins {
-	id 'com.palawanframe.angular'
-}
-
-angular {
-	group = '@sample'
-	nodeVersion = '12.12.0'
-	npmVersion = '6.12.0'
-	download = true
-	workDir = rootProject.file( '.gradle/nodejs' )
-	npmWorkDir = rootProject.file( '.gradle/npm' )
-	nodeModulesDir = rootProject.projectDir
-}
-
 wrapper {
 	distributionType = Wrapper.DistributionType.BIN
 	gradleVersion = '5.6.2'

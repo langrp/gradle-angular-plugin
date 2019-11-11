@@ -186,7 +186,7 @@ public class AngularPlugin implements Plugin<Project> {
     }
 
     private String getAngularProject(Project project, SourceSet sourceSet) {
-		if (ProjectUtil.isTopLevelProject(project)) {
+		if (ProjectUtil.isTopLevelAngularProject(project)) {
 			if (SourceSet.SOURCE_SET_MAIN.equals(sourceSet.getName())) {
 				return AngularExtension.get(project)
 						.getAngularJson()
@@ -211,7 +211,7 @@ public class AngularPlugin implements Plugin<Project> {
     }
 
     private SourceSet configureSourceSet(Project project, AngularExtension extension) {
-        if (ProjectUtil.isTopLevelProject(project)) {
+        if (ProjectUtil.isTopLevelAngularProject(project)) {
             extension.getAngularJson().getProjects().values().stream()
                     .filter(((Predicate<AngularJsonProject>)AngularJsonProject::isDefault).negate())
 					.map(AngularJsonProject::getName)
@@ -222,7 +222,7 @@ public class AngularPlugin implements Plugin<Project> {
     }
 
     private void configureNodeTasks(Project project) {
-        if (!ProjectUtil.isTopLevelProject(project)) {
+        if (!ProjectUtil.isTopLevelAngularProject(project)) {
             project.afterEvaluate(p -> {
                 p.getTasks().withType(SetupTask.class).all(t -> t.setEnabled(false));
                 p.getTasks().withType(NpmSetupTask.class).all(t -> t.setEnabled(false));

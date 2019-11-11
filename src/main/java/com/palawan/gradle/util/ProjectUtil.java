@@ -22,6 +22,7 @@
 
 package com.palawan.gradle.util;
 
+import com.palawan.gradle.AngularBasePlugin;
 import org.gradle.api.Project;
 
 /**
@@ -43,11 +44,16 @@ public class ProjectUtil {
      */
     public static Project getTopLevelProject(Project project) {
 
-        while (!isTopLevelProject( project )) {
-            project = project.getRootProject();
+        Project root = project;
+
+        while (project != null) {
+            project = project.getParent();
+            if (project != null && project.getPlugins().hasPlugin(AngularBasePlugin.class)) {
+                root = project;
+            }
         }
 
-        return project;
+        return root;
     }
 
     /**
@@ -60,5 +66,16 @@ public class ProjectUtil {
     public static boolean isTopLevelProject(Project project) {
         return project == project.getRootProject();
     }
+
+	/**
+	 * Is the given project top level project and also angular project.
+	 * Method has usage specifically for multi-project configuration.
+	 * @param project	Project to test for top level.
+	 * @return	Returns {@code true} if given project is top level
+	 * and angular-base plugin is applied.
+	 */
+	public static boolean isTopLevelAngularProject(Project project) {
+    	return getTopLevelProject(project) == project;
+	}
 
 }
