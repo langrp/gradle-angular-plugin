@@ -21,7 +21,7 @@ features. The angular plugin handles:
 To start using the plugin add this into your `build.gradle` file.
 ```groovy
 plugins {
-    id "com.palawanframe.angular" version "1.0.0"
+    id "com.palawanframe.angular" version "0.1"
 }
 ```
 
