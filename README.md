@@ -2,16 +2,10 @@
 
 [![Build Status](https://travis-ci.com/langrp/gradle-angular-plugin.svg?branch=master)](https://travis-ci.com/langrp/gradle-angular-plugin)
 [![License](https://img.shields.io/github/license/langrp/gradle-angular-plugin.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/Version-0.1.0-orange.svg)
-
-> **INFO**: The feature preview 'GRADLE_METADATA' must be enabled for the plugin to load dependencies from repository!
-> Adjust your ```settings.gradle``` file
-> ```groovy
-> enableFeaturePreview(FeaturePreviews.Feature.GRADLE_METADATA.name())
-> ```
+![Version](https://img.shields.io/badge/Version-0.2-orange.svg)
 
 This plugin enables you to run build of your backend along side of your angular base frontend. In order to do so the
-plugin uses [NodeJs](https://github.com/srs/gradle-node-plugin/blob/2.0/docs/node.md) plugin, which enables additional
+plugin uses [NodeJs](https://github.com/node-gradle/gradle-node-plugin/blob/master/docs/node.md) plugin, which enables additional
 features. The angular plugin handles:
 * Initialization of new angular project
 * Distribution and versioning
@@ -21,7 +15,7 @@ features. The angular plugin handles:
 To start using the plugin add this into your `build.gradle` file.
 ```groovy
 plugins {
-    id "com.palawanframe.angular" version "0.1"
+    id "com.palawanframe.angular" version "0.2"
 }
 ```
 
@@ -38,7 +32,7 @@ Once angular project is fully initialized the plugin enables full set of tasks:
 * _publishToNodeModules_ - publishes main angular source set into specified node_modules directory
 
 ## Configuring Plugin
-You can configure basic extension block of [NodeJs](https://github.com/srs/gradle-node-plugin/blob/2.0/docs/node.md)
+You can configure basic extension block of [NodeJs](https://github.com/node-gradle/gradle-node-plugin/blob/master/docs/node.md)
 plugin with additional parameters as shown below. The plugin extends NodeJs parameters for simple configuration, but
 you can still use node extension block.
 ```groovy
@@ -52,10 +46,10 @@ angular {
 
     // Angular CLI version for initialization of the project. If omitted the latest will be used
     version = '8.3.17'
-    
+
     // The rest of NodeJs parameters
-    nodeVersion = libraries.nodeVersion
-    npmVersion = libraries.npmVersion
+    nodeVersion = '12.13.1'
+    npmVersion = '6.13.1'
     download = true
     workDir = rootProject.file( '.gradle/nodejs' )
     npmWorkDir = rootProject.file( '.gradle/npm' )
@@ -114,7 +108,7 @@ project
 ```
 
 For multi project builds the node dependencies can and should be shared across all applications and components. As such
-the top level gradle project will handle node dependencies of [NodeJs](https://github.com/srs/gradle-node-plugin/blob/2.0/docs/node.md)
+the top level gradle project will handle node dependencies of [NodeJs](https://github.com/node-gradle/gradle-node-plugin/blob/master/docs/node.md)
 plugin. Every angular build depends on the node configuration build steps. It may seem blocked for the first build, but
 any other execution will be faster.
 
@@ -148,17 +142,25 @@ Angular lazy loading of library modules can also be supported without use of wra
 requires library source code to be part of the build. How to publish component source and depend on it for lazy
 loading build is show below (note for successful compilation the tsconfig paths and include must be updated).
 ```groovy
+import org.gradle.api.internal.artifacts.dsl.LazyPublishArtifact
+
 task sourcesNg(type: Zip) {
     from project.angular.sources.main.directory
     archiveClassifier.set( 'sources' )
 }
 
-LazyPublishArtifact sourceArtifact = new LazyPublishArtifact(tasks.named('sourcesNg'))
-configurations.nodeLibrary.outgoing.artifacts.add(sourceArtifact)
+configurations {
+    nodeSources {
+        outgoing.artifacts.add(new LazyPublishArtifact(tasks.named('sourcesNg')))
+    }
+}
 
-dependencies {
-    angular project( ':product-page' )
-    angular 'com.palawanframe.sample:components:1.0.0:sources@zip'
+project( ':main-app' ) {
+    dependencies {
+        angular 'com.palawanframe.sample:components:1.0.0'
+        angular 'com.palawanframe.sample:lazy-module:1.0.0:sources@zip'
+        angular project( path: ':lazy-page', configuration: 'nodeSources' )
+    }
 }
 ```
 

@@ -276,8 +276,8 @@ class AngularPluginFunctionalTests extends Specification {
 
 			angular {
 				group = '@sample'
-				nodeVersion = '12.12.0'
-				npmVersion = '6.12.0'
+				nodeVersion = '12.13.1'
+				npmVersion = '6.13.1'
 				download = true
 				workDir = rootProject.file( '.gradle/nodejs' )
 				npmWorkDir = rootProject.file( '.gradle/npm' )

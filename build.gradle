@@ -67,7 +67,7 @@ gradlePlugin {
 }
 
 pluginBundle {
-    website = 'https://github.com/langrp'
+    vcsUrl = "https://github.com/langrp/${rootProject.name}"
     vcsUrl = "https://github.com/langrp/${rootProject.name}"
     description project.description
     tags = ['angular', 'node', 'nodejs']
@@ -82,7 +82,7 @@ pluginBundle {
 dependencies {
     implementation gradleApi()
     implementation localGroovy()
-    implementation 'com.moowork.gradle:gradle-node-plugin:1.3.1'
+    implementation 'com.github.node-gradle:gradle-node-plugin:2.2.0'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
 
     testImplementation gradleTestKit()
@@ -91,13 +91,13 @@ dependencies {
     }
 }
 
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-        }
-    }
-}
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//        }
+//    }
+//}
 
 //signing {
 //    required { gradle.taskGraph.hasTask("uploadArchives") }
