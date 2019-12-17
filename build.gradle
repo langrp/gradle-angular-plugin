@@ -67,7 +67,7 @@ gradlePlugin {
 }
 
 pluginBundle {
-    vcsUrl = "https://github.com/langrp/${rootProject.name}"
+    website = "https://github.com/langrp/${rootProject.name}"
     vcsUrl = "https://github.com/langrp/${rootProject.name}"
     description project.description
     tags = ['angular', 'node', 'nodejs']
