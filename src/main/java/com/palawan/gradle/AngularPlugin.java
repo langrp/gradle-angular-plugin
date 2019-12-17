@@ -130,7 +130,7 @@ public class AngularPlugin implements Plugin<Project> {
 
         Configuration compileConfiguration = configurations.maybeCreate(compileConfigurationName);
         compileConfiguration.setVisible(true);
-        compileConfiguration.setDescription("Compile dependencies for " + sourceSet);
+        compileConfiguration.setDescription("Angular dependencies for " + sourceSet);
         compileConfiguration.setCanBeConsumed(false);
         compileConfiguration.setCanBeResolved(true);
 
