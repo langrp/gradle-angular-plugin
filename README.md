@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/langrp/gradle-angular-plugin.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/Version-0.3-orange.svg)
+![Version](https://img.shields.io/badge/Version-0.3.1-orange.svg)
 
 This plugin enables you to run build of your backend along side of your angular base frontend. In order to do so the
 plugin uses [NodeJs](https://github.com/langrp/gradle-node-plugin) plugin, which enables additional
@@ -15,7 +15,7 @@ features. The angular plugin handles:
 To start using the plugin add this into your `build.gradle` file.
 ```groovy
 plugins {
-    id "com.palawanframe.angular" version "0.3"
+    id "com.palawanframe.angular" version "0.3.1"
 }
 ```
 

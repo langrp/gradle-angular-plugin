@@ -1,7 +1,7 @@
 Changelog
 =========
 
-Version 0.3
+Version 0.3 *(2022-02-12)*
 ----------------------------
 
 * Change node plugin
