@@ -41,6 +41,7 @@ public class ProjectUtil {
 
     /**
      * Get complete location of "node_modules" for the project.
+     * @param project Project to fetch node modules for
      * @return node_modules path
      */
     public static Path getNodeModules(Project project) {
@@ -51,6 +52,7 @@ public class ProjectUtil {
      * Gets target location inside node_modules directory for given artifact.
      * Artifact group is used here to define parent folder name. This behavior
      * can be overridden by configuration of this extension group attribute.
+     * @param project Project to fetch node modules for
      * @param artifactGroup Artifact group, used only if this extension does
      *                      not define group.
      * @param artifactName  Artifact name

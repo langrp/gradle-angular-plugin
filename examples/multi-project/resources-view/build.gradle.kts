@@ -20,24 +20,24 @@
  * SOFTWARE.
  */
 plugins {
-	id 'org.springframework.boot' version '2.5.6'
-	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
-	id 'java'
+	id("org.springframework.boot") version "2.5.6"
+	id("io.spring.dependency-management") version "1.0.11.RELEASE"
+	id("java")
 }
 
 repositories {
 	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
-	maven { url 'https://repo.spring.io/snapshot' }
+	maven { url = uri("https://repo.spring.io/milestone") }
+	maven { url = uri("https://repo.spring.io/snapshot") }
 }
 
 dependencies {
-	implementation project(':multi-project:resources-ng')
+	implementation(project(":multi-project:resources-ng"))
 
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 	}
-	testImplementation 'io.projectreactor:reactor-test'
+	testImplementation("io.projectreactor:reactor-test")
 }
 

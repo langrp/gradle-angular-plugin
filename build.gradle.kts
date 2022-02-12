@@ -88,7 +88,7 @@ dependencies {
 	implementation(gradleApi())
 	implementation(localGroovy())
 
-    implementation("com.palawanframe.build:gradle-node-plugin:0.2.2")
+    implementation("com.palawanframe.build:gradle-node-plugin:0.2.3")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.10.0")
 
 	testImplementation(gradleTestKit())

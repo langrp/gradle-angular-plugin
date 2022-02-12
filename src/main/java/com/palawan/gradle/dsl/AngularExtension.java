@@ -76,7 +76,6 @@ public class AngularExtension {
      *
      * @return version
      */
-    @Nullable
     public String getVersion() {
         return version;
     }

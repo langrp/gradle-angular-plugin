@@ -21,18 +21,18 @@
  */
 
 plugins {
-	id 'java'
-	id 'com.palawanframe.angular'
+	id("java")
+	id("com.palawanframe.angular")
 }
 
 angular {
 	output = "${buildDir}/resources/main/static"
 }
 
-if (angular.angularJson) {
-  processResources.dependsOn(compileAngular)
+if (angular.angularJson != null) {
+    tasks.named("jar") { dependsOn("compileAngular") }
 
 	dependencies {
-		angular project(':multi-project:components')
+		"angular"(project(":multi-project:components"))
 	}
 }

@@ -23,6 +23,7 @@
 package com.palawan.gradle.tasks;
 
 import com.palawan.gradle.internal.ExecutableData;
+import com.palawan.gradle.internal.PackagerInternal;
 import com.palawan.gradle.util.ProjectUtil;
 import org.gradle.api.tasks.options.Option;
 
@@ -58,7 +59,11 @@ public class AngularCli extends CommandExecutionTask {
 
 		// Other than main packagers must be available on classpath
 		if (getNodeExtension().getDownload()) {
-			executable.withPathLocation(packager.get().getExecutableBinDir().toString());
+			getNodeExtension().getPackagerManager()
+					.getPackager()
+					.map(PackagerInternal::getExecutableBinDir)
+					.map(Path::toString)
+					.ifPresent(executable::withPathLocation);
 		}
 
 		return executable;

@@ -21,6 +21,6 @@
  */
 
 plugins{
-	id 'com.palawanframe.angular'
+	id("com.palawanframe.angular")
 }
 
