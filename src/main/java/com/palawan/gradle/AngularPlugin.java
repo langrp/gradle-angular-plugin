@@ -22,12 +22,26 @@
 
 package com.palawan.gradle;
 
-import com.moowork.gradle.node.npm.NpmInstallTask;
-import com.moowork.gradle.node.npm.NpmSetupTask;
-import com.moowork.gradle.node.npm.NpmTask;
-import com.moowork.gradle.node.task.SetupTask;
-import org.gradle.api.*;
-import org.gradle.api.artifacts.*;
+import com.palawan.gradle.dsl.AngularExtension;
+import com.palawan.gradle.dsl.AngularJsonProject;
+import com.palawan.gradle.dsl.SourceSet;
+import com.palawan.gradle.tasks.NodeInstallTask;
+import com.palawan.gradle.tasks.NodeSetupTask;
+import com.palawan.gradle.tasks.PackagerSetupTask;
+import com.palawan.gradle.tasks.PackagerTask;
+import com.palawan.gradle.util.AngularJsonHelper;
+import com.palawan.gradle.util.ProjectUtil;
+import org.gradle.api.Action;
+import org.gradle.api.GradleException;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.artifacts.ConfigurationContainer;
+import org.gradle.api.artifacts.ConfigurationPublications;
+import org.gradle.api.artifacts.PublishArtifact;
+import org.gradle.api.artifacts.ResolvedArtifact;
+import org.gradle.api.artifacts.ResolvedConfiguration;
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition;
 import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.Category;
@@ -53,25 +67,18 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.internal.Cast;
-import com.palawan.gradle.dsl.AngularExtension;
-import com.palawan.gradle.dsl.AngularJsonProject;
-import com.palawan.gradle.dsl.SourceSet;
-import com.palawan.gradle.util.AngularJsonHelper;
-import com.palawan.gradle.util.ProjectUtil;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
  * @author Langr, Petr
  * @since 1.0.0
  */
-@SuppressWarnings("UnstableApiUsage")
 public class AngularPlugin implements Plugin<Project> {
 
     /**
@@ -84,8 +91,8 @@ public class AngularPlugin implements Plugin<Project> {
      */
     private static final String COMPONENT_NAME = "angular";
 
-    private ObjectFactory objectFactory;
-    private SoftwareComponentFactory softwareComponentFactory;
+    private final ObjectFactory objectFactory;
+    private final SoftwareComponentFactory softwareComponentFactory;
 
     @Inject
     public AngularPlugin(ObjectFactory objectFactory, SoftwareComponentFactory softwareComponentFactory) {
@@ -119,7 +126,7 @@ public class AngularPlugin implements Plugin<Project> {
         angular.getSources().all(sourceSet -> {
             defineSourceSetConfigurations(sourceSet, project.getConfigurations());
             definePathsForSourceSet(sourceSet, project);
-            Provider<NpmTask> compileTask = createCompileTask(sourceSet, project);
+            Provider<PackagerTask> compileTask = createCompileTask(sourceSet, project);
             configureOutputDirectoryForSourceSet(sourceSet, compileTask, project);
             configurePublishToNodeModulesTask(sourceSet, project);
         });
@@ -164,24 +171,20 @@ public class AngularPlugin implements Plugin<Project> {
         });
     }
 
-    private Provider<NpmTask> createCompileTask(final SourceSet sourceSet, final Project project) {
-        return project.getTasks().register(sourceSet.getCompileTaskName(), NpmTask.class, task -> {
+    private Provider<PackagerTask> createCompileTask(final SourceSet sourceSet, final Project project) {
+        return project.getTasks().register(sourceSet.getCompileTaskName(), PackagerTask.class, task -> {
+            Project topLevelProject = ProjectUtil.getTopLevelProject(project);
             sourceSet.getDirectory().getSrcDirs().forEach(task.getInputs()::dir);
-            task.getOutputs().dir(Objects.requireNonNull(sourceSet.getOutput().getResourcesDir()));
+            task.getOutputs().dir(project.getObjects().fileCollection().from(sourceSet.getOutput()));
             task.setGroup("build");
             task.setDescription("Compiles " + sourceSet.getOutput());
-            task.setArgs(Arrays.asList("run", "build", "--project", getAngularProject(project, sourceSet)));
-            task.setWorkingDir(ProjectUtil.getTopLevelProject(project).getProjectDir());
-            task.dependsOn(ProjectUtil.getTopLevelProject(project).getTasks().withType(NpmInstallTask.class));
+            task.setArguments(List.of("run", "build", "--project", getAngularProject(project, sourceSet)));
+            task.setWorkingDir(topLevelProject.getProjectDir());
+            task.dependsOn(topLevelProject.getTasks().withType(NodeInstallTask.class));
             resolveNodeDependencies(sourceSet, task);
-            task.doLast(new Action<Task>() {
-                @Override
-                public void execute(Task task) {
-                    AngularJsonHelper.getInstance().generateTimestamp(
-                            sourceSet.getName(),
-                            sourceSet.getOutput().getResourcesDir());
-                }
-            });
+            task.doLast(t -> AngularJsonHelper.getInstance().generateTimestamp(
+                    sourceSet.getName(),
+                    sourceSet.getOutput().getResourcesDir()));
         });
     }
 
@@ -200,13 +203,13 @@ public class AngularPlugin implements Plugin<Project> {
 		}
 	}
 
-    private void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final Provider<NpmTask> compileTask, final Project project) {
+    private void configureOutputDirectoryForSourceSet(final SourceSet sourceSet, final Provider<PackagerTask> compileTask, final Project project) {
         AngularExtension angular = AngularExtension.get(project);
         sourceSet.getDirectory().setOutputDir(project.provider(sourceSet.getOutput()::getResourcesDir));
         angular.getAngularJson().getProject(getAngularProject(project, sourceSet))
                 .map(AngularJsonProject::getSourceRoot).map(Path::toFile).ifPresent(sourceSet.getDirectory()::srcDir);
         DefaultSourceSetOutput sourceSetOutput = Cast.cast(DefaultSourceSetOutput.class, sourceSet.getOutput());
-        sourceSetOutput.addClassesDir(sourceSet.getDirectory()::getOutputDir);
+        sourceSetOutput.addClassesDir(sourceSet.getDirectory().getClassesDirectory());
         sourceSetOutput.builtBy(compileTask);
     }
 
@@ -224,9 +227,9 @@ public class AngularPlugin implements Plugin<Project> {
     private void configureNodeTasks(Project project) {
         if (!ProjectUtil.isTopLevelAngularProject(project)) {
             project.afterEvaluate(p -> {
-                p.getTasks().withType(SetupTask.class).all(t -> t.setEnabled(false));
-                p.getTasks().withType(NpmSetupTask.class).all(t -> t.setEnabled(false));
-                p.getTasks().withType(NpmInstallTask.class).all(t -> t.setEnabled(false));
+                p.getTasks().withType(NodeSetupTask.class).all(t -> t.setEnabled(false));
+                p.getTasks().withType(PackagerSetupTask.class).all(t -> t.setEnabled(false));
+                p.getTasks().withType(NodeInstallTask.class).all(t -> t.setEnabled(false));
             });
         }
     }
@@ -269,12 +272,11 @@ public class AngularPlugin implements Plugin<Project> {
 
     private void configurePublishToNodeModulesTask(SourceSet sourceSet, Project project) {
         project.getTasks().register(sourceSet.getPublishToNodeModulesTaskName(), Copy.class, task -> {
-            AngularExtension ext = AngularExtension.get(project);
             task.from(sourceSet.getOutput().getClassesDirs());
-            task.into(ext.getNodeModulesTarget(project.getGroup().toString(), getAngularProject(project, sourceSet)));
+            task.into(ProjectUtil.getNodeModulesTarget(project, project.getGroup().toString(), getAngularProject(project, sourceSet)));
             task.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
             task.setGroup("publishing");
-            task.setDescription("Publishes build of '" + sourceSet.getName() + "' into " + ext.getNodeModules());
+            task.setDescription("Publishes build of '" + sourceSet.getName() + "' into " + ProjectUtil.getNodeModules(project));
             task.dependsOn(sourceSet.getCompileTaskName());
             task.doFirst(new Action<Task>() {
                 @Override
@@ -303,11 +305,12 @@ public class AngularPlugin implements Plugin<Project> {
                 ResolvedConfiguration resolvedConfiguration = compileConfiguration.getResolvedConfiguration();
 
                 for (ResolvedArtifact artifact : resolvedConfiguration.getResolvedArtifacts()) {
-                    File nodeArtifact = extension.getNodeModulesTarget(
+                    File nodeArtifact = ProjectUtil.getNodeModulesTarget(
+                            project,
                             artifact.getModuleVersion().getId().getGroup(),
-                            artifact.getName());
+                            artifact.getName()).toFile();
 
-                    if (AngularJsonHelper.getInstance().artifactUpdated(project, extension, artifact)) {
+                    if (AngularJsonHelper.getInstance().artifactUpdated(project, artifact)) {
                         project.delete(nodeArtifact);
                         project.copy(spec -> {
                             spec.from(project.zipTree(artifact.getFile()));

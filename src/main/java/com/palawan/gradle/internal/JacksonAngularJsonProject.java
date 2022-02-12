@@ -220,15 +220,12 @@ public class JacksonAngularJsonProject extends JsonBase implements AngularJsonPr
         root.set(ROOT, new TextNode(newPath));
         updatePath(oldPath, newPath, root, SOURCE_ROOT);
 
-        for(String fieldPath : getKnownFileFields()) {
+        for (String fieldPath : getKnownFileFields()) {
             updatePath(oldPath, newPath, fieldPath);
+            updateExtendingJson(baseDir.resolve(oldPath), path, fieldPath);
         }
 
         updatePath(oldPath, newPath, PROD_FILE_REPLACEMENTS_PATH);
-
-		// We assume files were moved before calling this method, therefore
-		// update above fields first to get updated file paths
-		updateTsConfigFiles(baseDir.resolve(oldPath), path);
 
     }
 
@@ -290,15 +287,17 @@ public class JacksonAngularJsonProject extends JsonBase implements AngularJsonPr
 	 * Updates dependent files for change of project root directory
 	 */
 	@Generated // exclude from JaCoCo
-	private void updateTsConfigFiles(Path oldPath, Path newPath) {
-		getByPath(root, LINT_TS_CONFIG_PATH)
-				.filter(JsonNode::isArray)
-				.ifPresent(n -> n.forEach(e -> updateTsConfigFile(oldPath, newPath, e)));
+	private void updateExtendingJson(Path oldPath, Path newPath, String fieldPath) {
+		getByPath(root, fieldPath)
+				.filter(JsonNode::isTextual)
+                .map(JsonNode::asText)
+                .filter(n -> n.endsWith("json"))
+				.ifPresent(n -> updateExtendingJsonFile(oldPath, newPath, n));
 	}
 
 	@Generated // exclude from JaCoCo
-	private void updateTsConfigFile(Path oldPath, Path newPath, JsonNode node) {
-		final Path tsConfigPath = baseDir.resolve(node.asText());
+	private void updateExtendingJsonFile(Path oldPath, Path newPath, String file) {
+		final Path tsConfigPath = baseDir.resolve(file);
 		Function<ObjectNode, Boolean> updater = n -> {
 			if (n.get("extends") != null) {
 				Path updated = newPath.relativize(oldPath.resolve(n.get("extends").asText()));

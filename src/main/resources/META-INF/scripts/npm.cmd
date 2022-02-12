@@ -1,5 +1,5 @@
 @rem
-@rem Copyright (c) 2019 Petr Langr
+@rem Copyright (c) 2022 Petr Langr
 @rem
 @rem Permission is hereby granted, free of charge, to any person obtaining a copy
 @rem of this software and associated documentation files (the "Software"), to deal

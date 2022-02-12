@@ -1,11 +1,11 @@
 # Gradle Angular Plugin
 
-[![Build Status](https://travis-ci.com/langrp/gradle-angular-plugin.svg?branch=master)](https://travis-ci.com/langrp/gradle-angular-plugin)
+[![Build Status](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/langrp/gradle-angular-plugin.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/Version-0.2-orange.svg)
+![Version](https://img.shields.io/badge/Version-0.3-orange.svg)
 
 This plugin enables you to run build of your backend along side of your angular base frontend. In order to do so the
-plugin uses [NodeJs](https://github.com/node-gradle/gradle-node-plugin/blob/master/docs/node.md) plugin, which enables additional
+plugin uses [NodeJs](https://github.com/langrp/gradle-node-plugin) plugin, which enables additional
 features. The angular plugin handles:
 * Initialization of new angular project
 * Distribution and versioning
@@ -15,7 +15,7 @@ features. The angular plugin handles:
 To start using the plugin add this into your `build.gradle` file.
 ```groovy
 plugins {
-    id "com.palawanframe.angular" version "0.2"
+    id "com.palawanframe.angular" version "0.3"
 }
 ```
 
@@ -47,14 +47,17 @@ angular {
     // Angular CLI version for initialization of the project. If omitted the latest will be used
     version = '8.3.17'
 
-    // The rest of NodeJs parameters
-    nodeVersion = '12.13.1'
-    npmVersion = '6.13.1'
-    download = true
-    workDir = rootProject.file( '.gradle/nodejs' )
-    npmWorkDir = rootProject.file( '.gradle/npm' )
-    nodeModulesDir = rootProject.projectDir
-
+    node {
+        // The rest of NodeJs parameters
+        version = '12.13.1'
+        download = true
+        workDir = rootProject.file('.gradle/nodejs')
+        
+        npm {
+            version = '6.13.1'
+            workDir = rootProject.file('.gradle/npm')
+        }
+    }
 }
 ```
 
@@ -78,8 +81,8 @@ Structures angular project into multi project build where main application would
 similarly to gradle structure. This allows to multi project build with main angular application, libraries as well as
 backend projects, all built from single command. Use additional parameter `mainProject` on `angularInit` task.
 ```shell script
-./gradlew angularInit --style=scss --routing --skipGit --mainProject=frontend-app
-./gradlew angularCli --cmd=generate --args="library components"
+./gradlew ngInit --style=scss --routing --skipGit --mainProject=frontend-app
+./gradlew ng --cmd generate --args library --args components
 ```
 
 The task will initialize structure for main angular application called `frontend-app` and place it into same named

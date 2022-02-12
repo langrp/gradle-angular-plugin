@@ -36,7 +36,6 @@ import org.gradle.util.GUtil;
  * @author Langr, Petr
  * @since 1.0.0
  */
-@SuppressWarnings("UnstableApiUsage")
 public class AngularProjectSourceSet implements SourceSet {
 
     /** Angular language */

@@ -27,6 +27,7 @@ import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.SourceSetOutput
 import spock.lang.Specification
+
 /**
  *
  * @author Langr, Petr

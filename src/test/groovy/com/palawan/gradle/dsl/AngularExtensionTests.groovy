@@ -22,13 +22,13 @@
 
 package com.palawan.gradle.dsl
 
-import com.moowork.gradle.node.NodeExtension
 import com.palawan.gradle.internal.AngularSourceSetContainer
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionContainer
 import spock.lang.Specification
+
 /**
  *
  * @author Langr, Petr
@@ -43,6 +43,7 @@ class AngularExtensionTests extends Specification {
 
 	def setup() {
 		Project project = Mock()
+		project.file(_) >> new File("/tmp")
 		project.getProjectDir() >> new File("/tmp")
 
 		def objFactory = Mock(ObjectFactory)
@@ -176,39 +177,6 @@ class AngularExtensionTests extends Specification {
 
 		then:
 		1 * sourceSetContainer.configure(_)
-
-	}
-
-	def "GetNodeModules"() {
-
-		when:
-		def result = extension.getNodeModules()
-
-		then:
-		result == new File("/tmp/node_modules")
-
-	}
-
-	def "GetNodeModulesTarget"() {
-
-		when:
-		def result = extension.getNodeModulesTarget("com.palawanframe.core", "core")
-
-		then:
-		result == new File("/tmp/node_modules/com.palawanframe.core/core")
-
-	}
-
-	def "GetNodeModulesTarget_group"() {
-
-		given:
-		extension.setGroup("@palawan")
-
-		when:
-		def result = extension.getNodeModulesTarget("com.palawanframe.core", "core")
-
-		then:
-		result == new File("/tmp/node_modules/@palawan/core")
 
 	}
 

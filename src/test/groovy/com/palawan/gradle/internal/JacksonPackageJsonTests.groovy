@@ -33,7 +33,8 @@ import java.nio.file.Paths
 /**
  *
  * @author Langr, Petr
- * @since 1.0.0 */
+ * @since 1.0.0
+ */
 class JacksonPackageJsonTests extends Specification {
 
 	private JacksonPackageJson packageJson

@@ -41,7 +41,6 @@ import javax.inject.Inject;
  * @author Langr, Petr
  * @since 1.0.0
  */
-@SuppressWarnings("UnstableApiUsage")
 public class AngularSourceSetContainer extends AbstractValidatingNamedDomainObjectContainer<SourceSet> implements SourceSetContainer {
 
     private final FileResolver fileResolver;

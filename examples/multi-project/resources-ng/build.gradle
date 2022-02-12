@@ -27,19 +27,12 @@ plugins {
 
 angular {
 	output = "${buildDir}/resources/main/static"
-	group = parent.angular.group
-	nodeVersion = parent.angular.nodeVersion
-	npmVersion = parent.angular.npmVersion
-	download = parent.angular.download
-	workDir = parent.angular.workDir
-	npmWorkDir = parent.angular.npmWorkDir
-	nodeModulesDir = parent.angular.nodeModulesDir
 }
 
 if (angular.angularJson) {
-	jar.dependsOn(compileAngular)
+  processResources.dependsOn(compileAngular)
 
 	dependencies {
-		 angular project(':multi-project:components')
+		angular project(':multi-project:components')
 	}
 }

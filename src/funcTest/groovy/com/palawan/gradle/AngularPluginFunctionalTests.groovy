@@ -23,6 +23,7 @@
 package com.palawan.gradle
 
 import org.gradle.testkit.runner.GradleRunner
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Stepwise
 
@@ -30,7 +31,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 
 /**
  *
@@ -38,6 +38,7 @@ import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
  * @since 1.0.0
  */
 @Stepwise
+@Ignore
 class AngularPluginFunctionalTests extends Specification {
 
 	static Path testProjectDir
@@ -70,8 +71,8 @@ class AngularPluginFunctionalTests extends Specification {
 				.build()
 
 		then:
-		result.output.contains("angularInit")
-		result.output.contains("angularCli")
+		result.output.contains("ngInit")
+		result.output.contains("ng")
 		!result.output.contains("compileAngular")
 
 	}
@@ -81,17 +82,15 @@ class AngularPluginFunctionalTests extends Specification {
 		when:
 		def result = GradleRunner.create()
 				.withProjectDir(testProjectDir.toFile())
-				.withArguments('angularInit', '--routing', '--style=scss', '--skipGit')
+				.withArguments('ngInit', '--routing', '--style=scss', '--skipGit')
 				.withPluginClasspath()
 				.build()
 
 		then:
-		result.task(":angularInit").outcome == SUCCESS
+		result.task(":ngInit").outcome == SUCCESS
 		Files.exists(testProjectDir.resolve("node_modules"))
 		Files.exists(testProjectDir.resolve("ng"))
-		Files.exists(testProjectDir.resolve("npm"))
 		Files.exists(testProjectDir.resolve("ng.cmd"))
-		Files.exists(testProjectDir.resolve("npm.cmd"))
 		Files.exists(testProjectDir.resolve("angular.json"))
 
 	}
@@ -115,12 +114,12 @@ class AngularPluginFunctionalTests extends Specification {
 		when:
 		def result = GradleRunner.create()
 				.withProjectDir(testProjectDir.toFile())
-				.withArguments('angularCli', '--cmd=generate', '--args=library components')
+				.withArguments('ng', '--cmd', 'generate', '--args', 'library', '--args', 'components')
 				.withPluginClasspath()
 				.build()
 
 		then:
-		result.task(":angularCli").outcome == SUCCESS
+		result.task(":ng").outcome == SUCCESS
 		Files.exists(testProjectDir.resolve("projects").resolve("components"))
 	}
 
@@ -162,7 +161,7 @@ class AngularPluginFunctionalTests extends Specification {
 				.build()
 
 		then:
-		result.task(":componentsDistZip").outcome == UP_TO_DATE // should be done from build
+		result.task(":componentsDistZip").outcome == SUCCESS // should be done from build
 		Files.exists(testProjectDir.resolve("build").resolve("distributions")
 				.resolve("sample-app-components-1.0.0-SNAPSHOT.zip"))
 
@@ -261,11 +260,25 @@ class AngularPluginFunctionalTests extends Specification {
 				.resolve("sample-app-1.0.1.zip"))
 	}
 
-	def buildScript(File buildFile) {
-		buildScript(buildFile, '1.0.0-SNAPSHOT')
+	def buildScript(File buildFile, Boolean subProject = false) {
+		buildScript(buildFile, '1.0.0-SNAPSHOT', subProject)
 	}
 
-	def buildScript(File buildFile, String version) {
+	def buildScript(File buildFile, String version, Boolean subProject = false) {
+		def nodeConfig = ""
+		if (!subProject) {
+			nodeConfig = """
+				node {
+					download = true
+					workingDir = rootProject.file( '.gradle/nodejs' )
+		
+					npm {
+						workingDir = rootProject.file( '.gradle/npm' )
+					}
+				}
+			"""
+		}
+
 		buildFile.text = """
 			plugins {
 				id 'com.palawanframe.angular'
@@ -276,12 +289,7 @@ class AngularPluginFunctionalTests extends Specification {
 
 			angular {
 				group = '@sample'
-				nodeVersion = '12.13.1'
-				npmVersion = '6.13.1'
-				download = true
-				workDir = rootProject.file( '.gradle/nodejs' )
-				npmWorkDir = rootProject.file( '.gradle/npm' )
-				nodeModulesDir = rootProject.projectDir
+				${nodeConfig}
 			}
 		"""
 	}

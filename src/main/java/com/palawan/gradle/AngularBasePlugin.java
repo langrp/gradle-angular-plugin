@@ -22,8 +22,8 @@
 
 package com.palawan.gradle;
 
-import com.moowork.gradle.node.NodeExtension;
-import com.moowork.gradle.node.NodePlugin;
+import com.palawan.gradle.dsl.NodeExtension;
+import com.palawan.gradle.tasks.AngularInstall;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.model.ObjectFactory;
@@ -31,8 +31,8 @@ import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.plugins.PluginContainer;
 import com.palawan.gradle.dsl.AngularExtension;
 import com.palawan.gradle.dsl.AngularJson;
-import com.palawan.gradle.tasks.AngularInitTask;
-import com.palawan.gradle.tasks.NgCliTask;
+import com.palawan.gradle.tasks.AngularInit;
+import com.palawan.gradle.tasks.AngularCli;
 import com.palawan.gradle.util.AngularJsonHelper;
 import com.palawan.gradle.util.ProjectUtil;
 
@@ -43,17 +43,22 @@ import java.util.Optional;
  * @author Langr, Petr
  * @since 1.0.0
  */
-@SuppressWarnings("UnstableApiUsage")
 public class AngularBasePlugin implements Plugin<Project> {
 
+    /** Angular task group */
+    public static final String ANGULAR_GROUP = "Angular";
     /** Angular extension name */
     private static final String EXTENSION_NAME = "angular";
-    /** Angular initialize task name */
-    private static final String INITIALIZE_TASK = "angularInit";
-    /** Angular CLI task name */
-    private static final String CLI_COMMAND_TASK = "angularCli";
 
-    private ObjectFactory objectFactory;
+    /** Angular install task name */
+    private static final String INSTALL_TASK = "ngInstall";
+    /** Angular initialize task name */
+    private static final String INITIALIZE_TASK = "ngInit";
+    /** Angular CLI task name */
+    private static final String CLI_COMMAND_TASK = "ng";
+
+
+    private final ObjectFactory objectFactory;
 
     @Inject
     public AngularBasePlugin(ObjectFactory objectFactory) {
@@ -62,9 +67,10 @@ public class AngularBasePlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        applyPlugins( project );
-        addExtension( project );
+        applyPlugins(project);
+        addExtension(project);
 
+        configureAngularInstallTask(project);
         configureInitializeTask(project);
         configureAngularCli(project);
         evaluateVersions(project);
@@ -77,25 +83,47 @@ public class AngularBasePlugin implements Plugin<Project> {
     }
 
     private void addExtension(Project project) {
+        NodeExtension nodeExtension = project.getExtensions().getByType(NodeExtension.class);
         Optional<AngularJson> angularJson = AngularJsonHelper.getInstance().getAngularJson(project);
         project.getExtensions().create(EXTENSION_NAME, AngularExtension.class,
-                project.getExtensions().getByType(NodeExtension.class), angularJson.orElse(null), objectFactory);
+                                       nodeExtension,
+                                       angularJson.orElse(null),
+                                       objectFactory);
+
+        if (!ProjectUtil.isTopLevelAngularProject(project)) {
+            ProjectUtil.getTopLevelProject(project)
+                    .getExtensions()
+                    .getByType(AngularExtension.class)
+                    .configureNode(nodeExtension);
+        }
+    }
+
+    private void configureAngularInstallTask(Project project) {
+        if (ProjectUtil.isTopLevelAngularProject(project)) {
+            project.getTasks().register(INSTALL_TASK, AngularInstall.class, t -> {
+                t.setGroup(ANGULAR_GROUP);
+                t.setDescription("Installs Angular using preferred package manager");
+            });
+        }
     }
 
     private void configureInitializeTask(Project project) {
         if (ProjectUtil.isTopLevelAngularProject(project)) {
-            project.getTasks().register(INITIALIZE_TASK, AngularInitTask.class, t -> {
-                t.setGroup("Build Setup");
-                t.setDescription("Initializes angular dependencies.");
+            project.getTasks().register(INITIALIZE_TASK, AngularInit.class, t -> {
+                t.setGroup(ANGULAR_GROUP);
+                t.setDescription("Initializes angular project.");
+                t.dependsOn(INSTALL_TASK);
             });
         }
     }
 
     private void configureAngularCli(Project project) {
         if (ProjectUtil.isTopLevelAngularProject(project)) {
-            project.getTasks().register(CLI_COMMAND_TASK, NgCliTask.class, t -> {
-                t.setGroup("Build Setup");
+            project.getExtensions().getExtraProperties().set(AngularCli.class.getSimpleName(), AngularCli.class);
+            project.getTasks().register(CLI_COMMAND_TASK, AngularCli.class, t -> {
+                t.setGroup(ANGULAR_GROUP);
                 t.setDescription("Executes angular-cli command '--cmd' with additional arguments '--args'");
+                t.dependsOn(INSTALL_TASK);
             });
         }
     }

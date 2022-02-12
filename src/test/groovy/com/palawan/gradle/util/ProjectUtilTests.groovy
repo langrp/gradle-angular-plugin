@@ -26,6 +26,7 @@ import com.palawan.gradle.AngularBasePlugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.PluginContainer
 import spock.lang.Specification
+
 /**
  *
  * @author Langr, Petr

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Petr Langr
+ * Copyright (c) 2022 Petr Langr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,17 +20,4 @@
  * SOFTWARE.
  */
 
-pluginManagement {
-	repositories {
-		gradlePluginPortal()
-	}
-	resolutionStrategy {
-		eachPlugin {
-			if (requested.id.id == 'com.gradle.plugin-publish') {
-				useModule("com.gradle.publish:plugin-publish-plugin:${requested.version}")
-			}
-		}
-	}
-}
-
-rootProject.name = 'gradle-angular-plugin'
+rootProject.name = "gradle-angular-plugin"

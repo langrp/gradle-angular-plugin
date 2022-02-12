@@ -35,7 +35,8 @@ import spock.lang.Specification
 /**
  *
  * @author Langr, Petr
- * @since 1.0.0 */
+ * @since 1.0.0
+ */
 class AngularSourceSetContainerTests extends Specification {
 
 	private AngularSourceSetContainer testContainer

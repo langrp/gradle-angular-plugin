@@ -1,6 +1,12 @@
 Changelog
 =========
 
+Version 0.3
+----------------------------
+
+* Change node plugin
+* Upgrade Gradle
+
 Version 0.2 *(2019-12-17)*
 ----------------------------
 

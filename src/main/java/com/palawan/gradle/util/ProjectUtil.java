@@ -23,7 +23,11 @@
 package com.palawan.gradle.util;
 
 import com.palawan.gradle.AngularBasePlugin;
+import com.palawan.gradle.dsl.AngularExtension;
 import org.gradle.api.Project;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Project utility methods.
@@ -34,6 +38,34 @@ import org.gradle.api.Project;
 public class ProjectUtil {
 
     private ProjectUtil() {}
+
+    /**
+     * Get complete location of "node_modules" for the project.
+     * @return node_modules path
+     */
+    public static Path getNodeModules(Project project) {
+        return getTopLevelProject(project).getProjectDir().toPath().resolve(AngularExtension.NODE_MODULES);
+    }
+
+    /**
+     * Gets target location inside node_modules directory for given artifact.
+     * Artifact group is used here to define parent folder name. This behavior
+     * can be overridden by configuration of this extension group attribute.
+     * @param artifactGroup Artifact group, used only if this extension does
+     *                      not define group.
+     * @param artifactName  Artifact name
+     * @return              Location of given artifact
+     */
+    public static Path getNodeModulesTarget(Project project, String artifactGroup, String artifactName) {
+        AngularExtension extension = AngularExtension.get(project);
+        Path nodeArtifactPath;
+        if (extension.getGroup() == null) {
+            nodeArtifactPath = Paths.get(getNodeModules(project).toString(), artifactGroup, artifactName);
+        } else {
+            nodeArtifactPath = Paths.get(getNodeModules(project).toString(), extension.getGroup(), artifactName);
+        }
+        return nodeArtifactPath;
+    }
 
     /**
      * Get the most higher gradle project in its hierarchy. The method

@@ -21,6 +21,7 @@ include 'multi-project:resources-ng'
 include 'multi-project:resources-view'
 
 includeBuild '..'
+includeBuild '../../gradle-node-plugin'
 
 rootProject.name = 'angular-examples'
 		

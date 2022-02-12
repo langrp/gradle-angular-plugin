@@ -22,10 +22,10 @@
 
 package com.palawan.gradle.util;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.palawan.gradle.dsl.AngularExtension;
 import com.palawan.gradle.dsl.AngularJson;
 import com.palawan.gradle.dsl.NgPackage;
 import com.palawan.gradle.dsl.PackageJson;
@@ -76,7 +76,7 @@ public class AngularJsonHelper {
     private final ObjectMapper mapper;
 
     private AngularJsonHelper() {
-        this.mapper = new ObjectMapper();
+        this.mapper = new ObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     }
 
     /**
@@ -216,10 +216,22 @@ public class AngularJsonHelper {
      *                          differs
      */
     public boolean artifactUpdated(File libraryLocation, File artifactFolder) {
-        Path libraryPackagePath = Paths.get(libraryLocation.toString(), NODE_LIBRARY_DESCRIPTOR);
-        Path artifactPackagePath = Paths.get(artifactFolder.toString(), NODE_LIBRARY_DESCRIPTOR);
-        Path libraryTimestampPath = Paths.get(libraryLocation.toString(), TIMESTAMP_FILE);
-        Path artifactTimestampPath = Paths.get(artifactFolder.toString(), TIMESTAMP_FILE);
+        return artifactUpdated(libraryLocation.toPath(), artifactFolder.toPath());
+    }
+
+    /**
+     * Verify whether artifact in given location {@code artifactFolder}
+     * was changed against to node_modules artifact at {@code libraryLocation}
+     * @param libraryLocation   Library node module location
+     * @param artifactFolder    New artifact location
+     * @return                  Returns {@code true} if module version/timestamp
+     *                          differs
+     */
+    public boolean artifactUpdated(Path libraryLocation, Path artifactFolder) {
+        Path libraryPackagePath = libraryLocation.resolve(NODE_LIBRARY_DESCRIPTOR);
+        Path artifactPackagePath = artifactFolder.resolve(NODE_LIBRARY_DESCRIPTOR);
+        Path libraryTimestampPath = libraryLocation.resolve(TIMESTAMP_FILE);
+        Path artifactTimestampPath = artifactFolder.resolve(TIMESTAMP_FILE);
 
         if (!Files.exists(libraryPackagePath) || !Files.exists(artifactPackagePath)) {
             return true;
@@ -230,14 +242,14 @@ public class AngularJsonHelper {
             String artifactVersion = getPackageVersion(artifactPackagePath.toFile()).orElse(null);
 
             if (Objects.equals(libraryVersion, artifactVersion)) {
-                String libStamp = new String(Files.readAllBytes(libraryTimestampPath), StandardCharsets.UTF_8);
-                String artStamp = new String(Files.readAllBytes(artifactTimestampPath), StandardCharsets.UTF_8);
+                String libStamp = Files.readString(libraryTimestampPath);
+                String artStamp = Files.readString(artifactTimestampPath);
                 return Files.exists(libraryTimestampPath) && Files.exists(artifactTimestampPath) &&
                         ! Objects.equals(libStamp, artStamp);
             }
 
         } catch (IOException e) {
-            throw new GradleException("Unable to read NodeJS library from " + libraryLocation);
+            throw new GradleException("Unable to read NodeJS library from " + libraryLocation, e);
         }
 
         return true;
@@ -248,24 +260,24 @@ public class AngularJsonHelper {
      * Verify whether given resolved artifact {@code artifact} differs with
      * node module stored in node_modules for the artifact.
      * @param project   Project instance to help process compressed files
-     * @param extension Angular extension to define node module location
      * @param artifact  Updated artifact
      * @return Returns {@code true} if module version/timestamp differs
      */
-    @SuppressWarnings("UnstableApiUsage")
-    public boolean artifactUpdated(Project project, AngularExtension extension, ResolvedArtifact artifact) {
-        File libraryLocation = extension.getNodeModulesTarget(
+    public boolean artifactUpdated(Project project, ResolvedArtifact artifact) {
+        Path libraryLocation = ProjectUtil.getNodeModulesTarget(
+                project,
                 artifact.getModuleVersion().getId().getGroup(),
                 artifact.getName());
         if (ArtifactTypeDefinition.ZIP_TYPE.equals(artifact.getType())) {
-            Optional<File> artifactFile = project.zipTree(artifact.getFile()).getFiles().stream()
+            Optional<Path> artifactFile = project.zipTree(artifact.getFile()).getFiles().stream()
                     .filter(f -> NODE_LIBRARY_DESCRIPTOR.equals(f.getName()))
                     .map(File::getParentFile)
-                    .reduce((f1, f2) -> f1.toPath().getNameCount() < f2.toPath().getNameCount() ? f1 : f2);
+                    .map(File::toPath)
+                    .reduce((f1, f2) -> f1.getNameCount() < f2.getNameCount() ? f1 : f2);
             return artifactFile.map(file -> artifactUpdated(libraryLocation, file)).orElse(true);
 
         } else if (ArtifactTypeDefinition.DIRECTORY_TYPE.equals(artifact.getType())) {
-            return artifactUpdated(libraryLocation, artifact.getFile());
+            return artifactUpdated(libraryLocation, artifact.getFile().toPath());
         }
         return true;
     }
@@ -283,7 +295,7 @@ public class AngularJsonHelper {
                     Long.toString(Instant.now().getEpochSecond()).getBytes(StandardCharsets.UTF_8));
 
         } catch (IOException e) {
-            throw new GradleException("Unable to write timestamp of '" + project + "' build.");
+            throw new GradleException("Unable to write timestamp of '" + project + "' build.", e);
         }
     }
 

@@ -22,29 +22,27 @@
 
 package com.palawan.gradle.tasks;
 
-import com.moowork.gradle.node.exec.NodeExecRunner;
-import com.moowork.gradle.node.npm.NpmTask;
 import com.palawan.gradle.dsl.AngularExtension;
 import com.palawan.gradle.dsl.AngularJsonProject;
+import com.palawan.gradle.internal.ExecutableData;
 import com.palawan.gradle.util.AngularJsonHelper;
+import com.palawan.gradle.util.ProjectUtil;
 import org.gradle.api.GradleException;
 import org.gradle.api.Incubating;
 import org.gradle.api.Task;
-import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.options.Option;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.palawan.gradle.util.PathUtil.normalize;
 import static com.palawan.gradle.util.PathUtil.windows;
@@ -61,39 +59,37 @@ import static com.palawan.gradle.util.PathUtil.windows;
  * @author Langr, Petr
  * @since 1.0.0
  */
-@SuppressWarnings("UnstableApiUsage")
-public class AngularInitTask extends NpmTask {
+public class AngularInit extends AngularCli {
 
-	private List<String> cliArguments;
-
-	private boolean createNewApplication = false;
 	private String mainProject;
 
 	/**
 	 * Constructor defines task actions and default CLI arguments
 	 */
-	public AngularInitTask() {
+	public AngularInit() {
 
+		doLast(this::organizeMainProject);
 		doLast(this::generateNgScript);
-		doLast(this::initializeAngularProject);
 
-		cliArguments = new ArrayList<>();
-		cliArguments.add("new");
-		cliArguments.add(getProject().getName());
-		cliArguments.add("--directory=.");
+		mainProject = getProject().getName();
 	}
 
 	/**
-	 * Task execution method
+	 * Executes angular CLI command to create new project with parameters defined
+	 * from command line.
 	 */
 	@Override
-	@TaskAction
-	public void exec() {
-		AngularExtension extension = AngularExtension.get(getProject());
-		setWorkingDir(getProject().getProjectDir());
-		String version = extension.getVersion() == null ? "latest" : extension.getVersion();
-		setArgs(Arrays.asList("install", "@angular/cli@" + version));
-		super.exec();
+	protected ExecutableData executableData(List<String> arguments) {
+		cleanWorkingDir();
+
+		List<String> args = Stream.concat(Stream.of(
+				"new", mainProject,
+				"--directory=.",
+				"--package-manager=" + packager.get().getNpmPackage()),
+				arguments.stream())
+				.collect(Collectors.toList());
+;
+		return super.executableData(args);
 	}
 
 	/**
@@ -105,8 +101,8 @@ public class AngularInitTask extends NpmTask {
 			option = "routing",
 			description = "When true, generates a routing module for the initial project."
 	)
-	public AngularInitTask setRouting(boolean routing) {
-		cliArguments.add("--routing="+routing);
+	public AngularInit setRouting(boolean routing) {
+		addArgument("--routing="+routing);
 		return this;
 	}
 
@@ -119,12 +115,11 @@ public class AngularInitTask extends NpmTask {
 			option = "style",
 			description = "The file extension or preprocessor to use for style files. Supported css|scss|sass|less|styl"
 	)
-	public AngularInitTask setStyle(String style) {
+	public AngularInit setStyle(String style) {
 		if (! Arrays.asList("css", "scss", "sass", "less", "styl").contains(style)) {
 			throw new GradleException("Unknown parameter 'style' value '" + style + "'");
 		}
-		cliArguments.add("--style=" + style);
-		createNewApplication = true;
+		addArgument("--style=" + style);
 		return this;
 	}
 
@@ -137,8 +132,8 @@ public class AngularInitTask extends NpmTask {
 			option = "skipGit",
 			description = "When true, does not initialize a git repository."
 	)
-	public AngularInitTask setSkipGit(boolean skipGit) {
-		cliArguments.add("--skipGit="+skipGit);
+	public AngularInit setSkipGit(boolean skipGit) {
+		addArgument("--skipGit="+skipGit);
 		return this;
 	}
 
@@ -154,29 +149,25 @@ public class AngularInitTask extends NpmTask {
 					" reorganizes generated project to follow gradle standards"
 	)
 	@Incubating
-	public AngularInitTask setMainProject(String mainProject) {
+	public AngularInit setMainProject(String mainProject) {
 		this.mainProject = mainProject;
-		cliArguments.set(1, mainProject);
-		cliArguments.add("--newProjectRoot=./");
+		addArgument("--newProjectRoot=./");
 		return this;
 	}
 
 	/**
-	 * Executes angular CLI command to create new project with parameters defined
-	 * from command line.
-	 * @param initTask Init task which executes this action
+	 * Removes package.json from working directory.
+	 * This helps the ng new to create fresh new project after installation of angular
 	 */
-	private void initializeAngularProject(Task initTask) {
-		if (createNewApplication) {
-			final AngularExtension extension = AngularExtension.get(initTask.getProject());
-			String ngScript = new File(extension.getNodeModules(), NgCliTask.ANGULAR_CLI).toString();
-			cliArguments.add(0, ngScript);
+	private void cleanWorkingDir() {
+		Path packageJson = getWorkingDirOrProjectDir().toPath().resolve(AngularJsonHelper.NODE_LIBRARY_DESCRIPTOR);
 
-			NodeExecRunner runner = new NodeExecRunner(initTask.getProject());
-			runner.setArguments(cliArguments);
-			runner.execute();
-
-			organizeMainProject();
+		try {
+			if (Files.exists(packageJson)) {
+				Files.delete(packageJson);
+			}
+		} catch (IOException e) {
+			throw new GradleException("Unable to delete old package.json", e);
 		}
 	}
 
@@ -187,34 +178,27 @@ public class AngularInitTask extends NpmTask {
 	 */
 	private void generateNgScript(Task initTask) {
 		final AngularExtension extension = AngularExtension.get(initTask.getProject());
-		final String projectDir = initTask.getProject().getProjectDir().toString();
 
 		if (extension.getDownload()) {
-			String ng = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/ng.sh");
-			String npm = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/npm.sh");
-			String ngCmd = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/ng.cmd");
-			String npmCmd = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/npm.cmd");
+			final String projectDir = initTask.getProject().getProjectDir().toString();
 
-			final Path nodePath = Paths.get(projectDir).relativize(extension.getWorkDir().toPath());
-			final Path nodeModulesPath = Paths.get(projectDir).relativize(extension.getNodeModules().toPath());
-			final Path npmPath = Paths.get(projectDir).relativize(extension.getNpmWorkDir().toPath());
+
+			String ng = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/ng.sh");
+			String ngCmd = AngularJsonHelper.getInstance().resourceToString("/META-INF/scripts/ng.cmd");
+
+			final Path nodePath = Paths.get(projectDir).relativize(extension.getWorkingDirPath());
+			final Path nodeModulesPath = Paths.get(projectDir).relativize(ProjectUtil.getNodeModules(initTask.getProject()));
 
 			final String nodeNorm = normalize(nodePath);
 			final String nodeModulesNorm = normalize(nodeModulesPath);
-			final String npmNorm = normalize(npmPath);
 			final String nodeNormCmd = windows(nodePath);
 			final String nodeModulesNormCmd = windows(nodeModulesPath);
-			final String npmNormCmd = windows(npmPath);
 
 			ng = ng.replace("<node_path>", nodeNorm).replace("<node_modules>", nodeModulesNorm);
-			npm = npm.replace("<node_path>", nodeNorm).replace("<npm_path>", npmNorm);
 			ngCmd = ngCmd.replace("<node_path>", nodeNormCmd).replace("<node_modules>", nodeModulesNormCmd);
-			npmCmd = npmCmd.replace("<node_path>", nodeNormCmd).replace("<npm_path>", npmNormCmd);
 
 			try {
-				Files.write(Paths.get(projectDir, "npm"), npm.getBytes(StandardCharsets.UTF_8));
 				Files.write(Paths.get(projectDir, "ng"), ng.getBytes(StandardCharsets.UTF_8));
-				Files.write(Paths.get(projectDir, "npm.cmd"), npmCmd.getBytes(StandardCharsets.UTF_8));
 				Files.write(Paths.get(projectDir, "ng.cmd"), ngCmd.getBytes(StandardCharsets.UTF_8));
 
 			} catch (IOException e) {
@@ -230,7 +214,7 @@ public class AngularInitTask extends NpmTask {
 	 * under created project and then update angular.json file
 	 * with new location.
 	 */
-	private void organizeMainProject() {
+	private void organizeMainProject(Task initTask) {
 		if (mainProject != null) {
 			Path projectRoot = getProject().getProjectDir().toPath();
 			Path targetRoot = projectRoot.resolve(mainProject);
@@ -247,20 +231,7 @@ public class AngularInitTask extends NpmTask {
 				angularProject.getProjectFiles()
 						.sorted(Comparator.comparing(Path::getNameCount))
 						.skip(1L) // skip root './'
-						.forEach(new Consumer<Path>() {
-							List<Path> list = new ArrayList<>();
-
-							@Override
-							public void accept(Path path) {
-								for (Path p : list) {
-									if (path.startsWith(p)) {
-										return;
-									}
-								}
-
-								move(path, targetRoot.resolve(projectRoot.relativize(path)));
-							}
-						});
+						.forEach(p -> move(p, targetRoot.resolve(projectRoot.relativize(p))));
 
 				angularProject.setRoot(targetRoot);
 

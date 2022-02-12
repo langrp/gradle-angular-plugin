@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Petr Langr
+ * Copyright (c) 2022 Petr Langr
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,49 +19,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    id 'com.gradle.plugin-publish' version '0.10.1'
-    id 'java-gradle-plugin'
-    id 'java'
-    id 'idea'
-    id 'groovy'
-    id 'signing'
+	id("java")
+	id("groovy")
+	id("java-gradle-plugin")
+	id("idea")
+	id("com.gradle.plugin-publish") version "0.20.0"
+	id("pl.droidsonroids.jacoco.testkit") version "1.0.7"
+	id("signing")
 }
-apply from: rootProject.file( 'gradle/publishing.gradle' )
-apply from: rootProject.file( 'gradle/functional-tests.gradle' )
+
+apply( from = "gradle/publishing.gradle.kts" )
+apply( from = "gradle/functional-tests.gradle.kts" )
 
 repositories {
     mavenCentral()
-    gradlePluginPortal()
+	gradlePluginPortal()
 }
 
 
-group = 'com.palawanframe.build'
-description = 'Gradle plugin enabling build of angular application/components along side with gradle backend build.'
+group = "com.palawanframe.build"
+description = "Gradle plugin enabling build of angular application/components along side with gradle backend build."
 
-targetCompatibility = JavaVersion.VERSION_1_8
-sourceCompatibility = JavaVersion.VERSION_1_8
+java {
+    targetCompatibility = JavaVersion.VERSION_11
+    sourceCompatibility = JavaVersion.VERSION_11
+}
 
 gradlePlugin {
     plugins {
-        angular {
-            id = 'com.palawanframe.angular'
-            displayName = 'Angular Plugin'
+        register("angular") {
+            id = "com.palawanframe.angular"
+            displayName = "Angular Plugin"
             description = """
                 Build your angular frontend application along with your gradle base backend application. Plugin manages
                 versioning, publishing and dependency management of your angular application and/or components.
             """
-            implementationClass = 'com.palawan.gradle.AngularPlugin'
+            implementationClass = "com.palawan.gradle.AngularPlugin"
         }
-        angularBase {
-            id = 'com.palawanframe.angular-base'
-            displayName = 'Angular Base Plugin'
+        register("angularBase") {
+            id = "com.palawanframe.angular-base"
+            displayName = "Angular Base Plugin"
             description = """
                 Creates new angular project from only gradle initialized project. Simply apply plugin into your gradle
                 project and execute :angularInit task and new angular project will be created.
             """
-            implementationClass = 'com.palawan.gradle.AngularBasePlugin'
+            implementationClass = "com.palawan.gradle.AngularBasePlugin"
         }
     }
 }
@@ -69,8 +74,8 @@ gradlePlugin {
 pluginBundle {
     website = "https://github.com/langrp/${rootProject.name}"
     vcsUrl = "https://github.com/langrp/${rootProject.name}"
-    description project.description
-    tags = ['angular', 'node', 'nodejs']
+    description =project.description
+    tags = listOf("angular", "node", "nodejs")
 
 //    mavenCoordinates {
 //        groupId = project.group as String
@@ -80,27 +85,22 @@ pluginBundle {
 }
 
 dependencies {
-    implementation gradleApi()
-    implementation localGroovy()
-    implementation 'com.github.node-gradle:gradle-node-plugin:2.2.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.10.0'
+	implementation(gradleApi())
+	implementation(localGroovy())
 
-    testImplementation gradleTestKit()
-    testImplementation('org.spockframework:spock-core:1.3-groovy-2.5') {
-        exclude group: 'org.codehaus.groovy'
-    }
+    implementation("com.palawanframe.build:gradle-node-plugin:0.2.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.0")
+
+	testImplementation(gradleTestKit())
+	testImplementation(platform("org.spockframework:spock-bom:2.0-groovy-3.0"))
+	testImplementation("org.spockframework:spock-core")
 }
 
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-//        }
-//    }
-//}
-
-//signing {
-//    required { gradle.taskGraph.hasTask("uploadArchives") }
-//    sign configurations.archives
-//}
-
+tasks.withType<Test> {
+	useJUnitPlatform()
+	testLogging {
+		events = setOf(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+		showCauses = true
+		showStandardStreams = false
+	}
+}

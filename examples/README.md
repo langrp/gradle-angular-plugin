@@ -24,8 +24,8 @@ This example demonstrates build of angular application along with spring backend
 
 Execute following lines to initialize project
 ```shell script
-./gradlew :multi-project:angularInit --style=scss --routing --skipGit --mainProject=resources-ng
-./gradlew :multi-project:angularCli --cmd=generate --args="library components"
+./gradlew :multi-project:ngInit --style=scss --routing --skipGit --mainProject=resources-ng
+./gradlew :multi-project:ng --cmd generate --args library --args components
 ```
 
 Since angular project was not initialized defined dependency in `resources-ng` has condition on presence of
