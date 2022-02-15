@@ -22,6 +22,7 @@
 
 package com.palawan.gradle.internal;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.palawan.gradle.dsl.PackageJson;
@@ -29,6 +30,7 @@ import com.palawan.gradle.util.AngularJsonHelper;
 
 import java.io.File;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 
 /**
  * Implementation of {@link PackageJson} using Jackson parser.
@@ -38,8 +40,8 @@ import java.util.Objects;
  */
 public class JacksonPackageJson extends JsonBase implements PackageJson {
 
-	private File file;
-	private ObjectNode root;
+	private final File file;
+	private final ObjectNode root;
 
 	public JacksonPackageJson(ObjectNode root, File file) {
 		this.root = Objects.requireNonNull(root, "No root defined");
@@ -58,6 +60,18 @@ public class JacksonPackageJson extends JsonBase implements PackageJson {
 			root.set("version", versionNode);
 			AngularJsonHelper.getInstance().updatePackageJson(this);
 		}
+	}
+
+	@Override
+	public void updateScripts(BinaryOperator<String> updater) {
+		getByPath(root, "scripts")
+				.filter(JsonNode::isObject)
+				.ifPresent(n -> n.fields()
+						.forEachRemaining(e -> e.setValue(
+								new TextNode(updater.apply(e.getKey(), e.getValue().asText()))
+						)));
+
+		AngularJsonHelper.getInstance().updatePackageJson(this);
 	}
 
 	/**

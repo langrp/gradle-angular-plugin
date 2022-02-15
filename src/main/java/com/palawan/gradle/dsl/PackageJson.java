@@ -22,6 +22,8 @@
 
 package com.palawan.gradle.dsl;
 
+import java.util.function.BinaryOperator;
+
 /**
  * Interface representing 'package.json' file of NodeJS component and
  * operations done on this particular file.
@@ -43,4 +45,9 @@ public interface PackageJson {
 	 */
 	void setVersion(String version);
 
+	/**
+	 * Updates each script using provided operator accepting name and current script value.
+	 * @param updater Script updater accepting script name and current value, producing updated content
+	 */
+	void updateScripts(BinaryOperator<String> updater);
 }

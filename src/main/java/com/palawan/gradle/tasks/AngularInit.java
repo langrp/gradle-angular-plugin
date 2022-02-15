@@ -68,6 +68,7 @@ public class AngularInit extends AngularCli {
 	 */
 	public AngularInit() {
 
+		doLast(this::preparePackagerScripts);
 		doLast(this::organizeMainProject);
 		doLast(this::generateNgScript);
 
@@ -169,6 +170,17 @@ public class AngularInit extends AngularCli {
 		} catch (IOException e) {
 			throw new GradleException("Unable to delete old package.json", e);
 		}
+	}
+
+	/**
+	 * Append project parameter name to build script
+	 * @param initTask	Init task which executes this action
+	 */
+	private void preparePackagerScripts(Task initTask) {
+		AngularJsonHelper.getInstance().getPackageJson(getWorkingDirOrProjectDir().toPath())
+				.ifPresent(p -> p.updateScripts((name, value) ->
+					"build".equalsIgnoreCase(name) ? value + " $npm_config_project" : value
+				));
 	}
 
 	/**

@@ -178,13 +178,20 @@ public class AngularPlugin implements Plugin<Project> {
             task.getOutputs().dir(project.getObjects().fileCollection().from(sourceSet.getOutput()));
             task.setGroup("build");
             task.setDescription("Compiles " + sourceSet.getOutput());
-            task.setArguments(List.of("run", "build", "--project", getAngularProject(project, sourceSet)));
+            task.setArguments(List.of("run", "build", "--project=" + getAngularProject(project, sourceSet)));
             task.setWorkingDir(topLevelProject.getProjectDir());
             task.dependsOn(topLevelProject.getTasks().withType(NodeInstallTask.class));
             resolveNodeDependencies(sourceSet, task);
-            task.doLast(t -> AngularJsonHelper.getInstance().generateTimestamp(
-                    sourceSet.getName(),
-                    sourceSet.getOutput().getResourcesDir()));
+            // Gradle does not support lambda actions as it can't track the class changes
+            //noinspection Convert2Lambda
+            task.doLast(new Action<>() {
+                @Override
+                public void execute(Task task) {
+                    AngularJsonHelper.getInstance().generateTimestamp(
+                            sourceSet.getName(),
+                            sourceSet.getOutput().getResourcesDir());
+                }
+            });
         });
     }
 
