@@ -2,7 +2,7 @@
 
 [![Build Status](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/langrp/gradle-angular-plugin/actions/workflows/build.yml)
 [![License](https://img.shields.io/github/license/langrp/gradle-angular-plugin.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/Version-0.3.1-orange.svg)
+![Version](https://img.shields.io/badge/Version-0.3.2-orange.svg)
 
 This plugin enables you to run build of your backend along side of your angular base frontend. In order to do so the
 plugin uses [NodeJs](https://github.com/langrp/gradle-node-plugin) plugin, which enables additional
@@ -15,7 +15,7 @@ features. The angular plugin handles:
 To start using the plugin add this into your `build.gradle` file.
 ```groovy
 plugins {
-    id "com.palawanframe.angular" version "0.3.1"
+    id "com.palawanframe.angular" version "0.3.2"
 }
 ```
 
@@ -45,17 +45,17 @@ angular {
     output = "${buildDir}/resources/main/static/ng"
 
     // Angular CLI version for initialization of the project. If omitted the latest will be used
-    version = '8.3.17'
+    version = "8.3.17"
 
     node {
         // The rest of NodeJs parameters
-        version = '12.13.1'
+        version = "12.13.1"
         download = true
-        workDir = rootProject.file('.gradle/nodejs')
+        workingDir = rootProject.file(".gradle/nodejs")
         
         npm {
-            version = '6.13.1'
-            workDir = rootProject.file('.gradle/npm')
+            version = "6.13.1"
+            workingDir = rootProject.file(".gradle/npm")
         }
     }
 }
@@ -66,7 +66,7 @@ Once gradle project is configured with above parameters the plugin can initializ
 using angular CLI command of `ng new`. The task supports basic parameters of CLI, in which the `style` parameter
 is mandatory to create new angular application. If omitted only angular CLI will be initialized in NodeJs project.
 ```shell script
-./gradlew angularInit --style=scss --routing --skipGit
+./gradlew ngInit --style=scss --routing --skipGit
 ```
 This task will create file structure of NodeJs project with angular cli and quick shell scripts `npm` and `ng`
 depending whether local copy of `node` needs to be downloaded. From here we initialize angular project using cli
